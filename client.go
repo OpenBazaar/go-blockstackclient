@@ -9,7 +9,7 @@ import (
 	"path"
 	"encoding/json"
 	"strings"
-	"gx/ipfs/QmYf7ng2hG5XBtJA3tN34DQ2GUN5HNksEw1rLDkmr6vGku/go-multihash"
+	"github.com/jbenet/go-multihash"
 )
 
 type BlockstackClient struct {
