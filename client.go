@@ -12,8 +12,13 @@ import (
 	"github.com/jbenet/go-multihash"
 )
 
+type httpClient interface {
+	Get(string) (*http.Response, error)
+}
+
 type BlockstackClient struct {
 	resolverURL string
+	httpClient  httpClient
 	cache       map[string]CachedGuid
 	cacheLife   time.Duration
 	sync.Mutex
@@ -27,6 +32,7 @@ type CachedGuid struct {
 func NewBlockStackClient(resolverURL string) *BlockstackClient {
 	b := &BlockstackClient{
 		resolverURL: resolverURL,
+		httpClient: &http.Client{Timeout:time.Minute},
 		cache: make(map[string]CachedGuid),
 		cacheLife: time.Minute,
 	}
@@ -49,9 +55,12 @@ func (b *BlockstackClient) Resolve(handle string) (guid string, err error) {
 		return "", err
 	}
 	resolver.Path = path.Join(resolver.Path, "v2", "users", formatted)
-	resp, err := http.Get(resolver.String())
+	resp, err := b.httpClient.Get(resolver.String())
 	if err != nil {
 		return "", errors.New("Error querying resolver")
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return "", errors.New("Handle not found")
 	}
 	decoder := json.NewDecoder(resp.Body)
 	var data map[string]interface{}
